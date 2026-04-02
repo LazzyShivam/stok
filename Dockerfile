@@ -14,6 +14,8 @@ RUN cd backend && npm ci --include=dev
 COPY backend/ ./backend/
 
 # Generate Prisma client FIRST so TypeScript can find the types
+# DATABASE_URL is only needed for schema validation — not an actual DB connection
+ENV DATABASE_URL="postgresql://build:build@localhost:5432/build"
 RUN cd backend && npx prisma generate
 
 # Compile TypeScript → dist/
