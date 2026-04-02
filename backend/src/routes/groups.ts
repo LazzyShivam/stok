@@ -3,6 +3,7 @@ import { body, validationResult } from 'express-validator';
 import multer from 'multer';
 import path from 'path';
 import { v4 as uuidv4 } from 'uuid';
+import { GroupMember } from '@prisma/client';
 import { authenticate, AuthRequest } from '../middleware/auth';
 import prisma from '../config/database';
 import { getIO } from '../socket';
@@ -183,7 +184,7 @@ router.post('/:id/messages', authenticate, msgUpload.single('media'), async (req
     const group = await prisma.group.findUnique({ where: { id: req.params.id }, include: { members: true } });
     conv = await prisma.conversation.create({
       data: {
-        members: { create: group!.members.map(m => ({ userId: m.userId })) },
+        members: { create: group!.members.map((m: GroupMember) => ({ userId: m.userId })) },
       },
     });
   }

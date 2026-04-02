@@ -1,6 +1,7 @@
 import { Server as HTTPServer } from 'http';
 import { Server, Socket } from 'socket.io';
 import jwt from 'jsonwebtoken';
+import { ChannelMember, ConversationMember, GroupMember } from '@prisma/client';
 import prisma from '../config/database';
 import { registerChatHandlers } from './chatHandler';
 import { registerPresenceHandlers } from './presenceHandler';
@@ -49,15 +50,15 @@ export const initializeSocket = (server: HTTPServer): void => {
 
     // Join conversation rooms the user is part of
     const memberships = await prisma.conversationMember.findMany({ where: { userId } });
-    memberships.forEach(m => socket.join(`conv:${m.conversationId}`));
+    memberships.forEach((m: ConversationMember) => socket.join(`conv:${m.conversationId}`));
 
     // Join group rooms
     const groups = await prisma.groupMember.findMany({ where: { userId } });
-    groups.forEach(g => socket.join(`group:${g.groupId}`));
+    groups.forEach((g: GroupMember) => socket.join(`group:${g.groupId}`));
 
     // Join channel rooms
     const channels = await prisma.channelMember.findMany({ where: { userId } });
-    channels.forEach(c => socket.join(`channel:${c.channelId}`));
+    channels.forEach((c: ChannelMember) => socket.join(`channel:${c.channelId}`));
 
     // Register event handlers
     registerChatHandlers(io, socket, userId);

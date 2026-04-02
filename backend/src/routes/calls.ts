@@ -1,5 +1,6 @@
 import { Router, Response } from 'express';
 import { body, validationResult } from 'express-validator';
+import { CallParticipant } from '@prisma/client';
 import { authenticate, AuthRequest } from '../middleware/auth';
 import prisma from '../config/database';
 import { getIO } from '../socket';
@@ -51,7 +52,7 @@ router.patch('/:id/status', authenticate,
 
     // Notify all participants
     const participants = await prisma.callParticipant.findMany({ where: { callId: req.params.id } });
-    participants.forEach(p => {
+    participants.forEach((p: CallParticipant) => {
       getIO().to(`user:${p.userId}`).emit('call_status_changed', { callId: req.params.id, status });
     });
 
