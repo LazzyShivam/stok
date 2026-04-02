@@ -30,7 +30,7 @@ router.get('/', authenticate, async (req: AuthRequest, res: Response) => {
     },
     orderBy: { createdAt: 'desc' },
   });
-  res.json(channels.map(ch => ({ ...ch, isJoined: ch.members.length > 0 })));
+  res.json(channels.map((ch: typeof channels[number]) => ({ ...ch, isJoined: ch.members.length > 0 })));
 });
 
 // POST /api/channels - create channel

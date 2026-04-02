@@ -1,4 +1,5 @@
 import { Server, Socket } from 'socket.io';
+import { GroupMember, Message } from '@prisma/client';
 import prisma from '../config/database';
 import { generateAgentResponse } from '../services/aiService';
 
@@ -91,7 +92,7 @@ export const registerChatHandlers = (io: Server, socket: Socket, userId: string)
         include: { sender: true },
       });
 
-      const chatHistory = history.reverse().map(m => ({
+      const chatHistory = history.reverse().map((m: Message) => ({
         role: m.senderId === userId ? 'user' as const : 'assistant' as const,
         content: m.content || '',
       }));
@@ -142,7 +143,7 @@ export const registerChatHandlers = (io: Server, socket: Socket, userId: string)
     if (!conv) {
       const group = await prisma.group.findUnique({ where: { id: groupId }, include: { members: true } });
       conv = await prisma.conversation.create({
-        data: { members: { create: group!.members.map(m => ({ userId: m.userId })) } },
+        data: { members: { create: group!.members.map((m: GroupMember) => ({ userId: m.userId })) } },
       });
     }
 
