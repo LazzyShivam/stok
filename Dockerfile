@@ -1,45 +1,57 @@
 # ─── Stage 1: Build ───────────────────────────────────────────────────────────
 FROM node:20-alpine AS builder
 
+# Force dev deps even if Railway sets NODE_ENV=production
+ENV NODE_ENV=development
+
 WORKDIR /app
 
-# Install deps first (layer cache)
+# Install ALL deps (including devDependencies: tsc, @types/*, etc.)
 COPY backend/package*.json ./backend/
-RUN cd backend && npm ci
+RUN cd backend && npm ci --include=dev
 
-# Copy source and build
+# Copy source
 COPY backend/ ./backend/
-RUN cd backend && npm run build && npx prisma generate
+
+# Compile TypeScript → dist/
+RUN cd backend && ./node_modules/.bin/tsc
+
+# Generate Prisma client
+RUN cd backend && npx prisma generate
 
 # ─── Stage 2: Production ──────────────────────────────────────────────────────
 FROM node:20-alpine AS runner
 
 RUN apk add --no-cache dumb-init
 
-WORKDIR /app
-
-# Production deps only
-COPY backend/package*.json ./backend/
-RUN cd backend && npm ci --omit=dev
-
-# Copy compiled output + prisma schema
-COPY --from=builder /app/backend/dist ./backend/dist
-COPY --from=builder /app/backend/node_modules/.prisma ./backend/node_modules/.prisma
-COPY backend/prisma ./backend/prisma
-
-# Upload directories
-RUN mkdir -p backend/uploads/images \
-             backend/uploads/videos \
-             backend/uploads/audio \
-             backend/uploads/files \
-             backend/uploads/avatars \
-             backend/uploads/groups \
-             backend/uploads/channels
-
 WORKDIR /app/backend
 
-EXPOSE 3000
 ENV NODE_ENV=production
+
+# Production deps only
+COPY backend/package*.json ./
+RUN npm ci --omit=dev
+
+# Copy compiled output
+COPY --from=builder /app/backend/dist ./dist
+
+# Copy generated Prisma client
+COPY --from=builder /app/backend/node_modules/.prisma ./node_modules/.prisma
+COPY --from=builder /app/backend/node_modules/@prisma ./node_modules/@prisma
+
+# Copy Prisma schema (needed for migrate deploy at runtime)
+COPY backend/prisma ./prisma
+
+# Upload directories
+RUN mkdir -p uploads/images \
+             uploads/videos \
+             uploads/audio \
+             uploads/files \
+             uploads/avatars \
+             uploads/groups \
+             uploads/channels
+
+EXPOSE 3000
 
 ENTRYPOINT ["dumb-init", "--"]
 CMD ["sh", "-c", "npx prisma migrate deploy && node dist/index.js"]
