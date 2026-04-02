@@ -13,11 +13,11 @@ RUN cd backend && npm ci --include=dev
 # Copy source
 COPY backend/ ./backend/
 
+# Generate Prisma client FIRST so TypeScript can find the types
+RUN cd backend && npx prisma generate
+
 # Compile TypeScript → dist/
 RUN cd backend && ./node_modules/.bin/tsc
-
-# Generate Prisma client
-RUN cd backend && npx prisma generate
 
 # ─── Stage 2: Production ──────────────────────────────────────────────────────
 FROM node:20-alpine AS runner
