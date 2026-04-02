@@ -1,0 +1,78 @@
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# Build outputs
+dist/
+build/
+*.js.map
+
+# Environment
+.env
+.env.local
+.env.production
+.env.*.local
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+
+# Prisma
+backend/prisma/migrations/*.sql
+# keep migrations folder but not migration sql if needed
+
+# Docker
+docker-compose.override.yml
+
+# Claude launch config (local only)
+.claude/
+
+# Flutter
+frontend/ndk/
+frontend/platform-tools/
+frontend/cmdline-tools/
+frontend/emulator/
+frontend/system-images/
+frontend/.dart_tool/
+frontend/.flutter-plugins
+frontend/.flutter-plugins-dependencies
+frontend/.packages
+frontend/pubspec.lock
+frontend/build/
+frontend/.fvm/
+frontend/android/.gradle/
+frontend/android/local.properties
+frontend/android/GeneratedPluginRegistrant.java
+frontend/ios/.symlinks/
+frontend/ios/Pods/
+frontend/ios/Runner.xcworkspace/xcshareddata/
+frontend/macos/.symlinks/
+frontend/macos/Pods/
+frontend/linux/.dart_tool/
+frontend/windows/.dart_tool/
+frontend/web/favicon.png
+frontend/coverage/
+
+# Backend generated
+backend/dist/
+backend/uploads/
+backend/node_modules/
+
+# Misc
+*.pem
+*.key
+*.cert

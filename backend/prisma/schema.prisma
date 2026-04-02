@@ -1,0 +1,286 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id          String     @id @default(uuid())
+  phone       String     @unique
+  name        String     @default("")
+  avatar      String?
+  bio         String?
+  isAgent     Boolean    @default(false)
+  agentConfig Json?
+  status      UserStatus @default(OFFLINE)
+  lastSeen    DateTime?
+  pushToken   String?
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  sentMessages         Message[]              @relation("SentMessages")
+  conversationMembers  ConversationMember[]
+  groupMembers         GroupMember[]
+  channelMembers       ChannelMember[]
+  eventAttendees       EventAttendee[]
+  createdGroups        Group[]                @relation("GroupCreator")
+  createdChannels      Channel[]              @relation("ChannelCreator")
+  createdEvents        Event[]                @relation("EventCreator")
+  broadcasts           Broadcast[]            @relation("BroadcastSender")
+  callParticipants     CallParticipant[]
+
+  @@map("users")
+}
+
+model OtpStore {
+  id        String   @id @default(uuid())
+  phone     String
+  otp       String
+  expiresAt DateTime
+  used      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([phone])
+  @@map("otp_stores")
+}
+
+model Conversation {
+  id        String       @id @default(uuid())
+  type      ConvType     @default(DIRECT)
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+
+  members  ConversationMember[]
+  messages Message[]
+
+  @@map("conversations")
+}
+
+model ConversationMember {
+  id             String       @id @default(uuid())
+  conversationId String
+  userId         String
+  lastReadAt     DateTime?
+  joinedAt       DateTime     @default(now())
+
+  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([conversationId, userId])
+  @@map("conversation_members")
+}
+
+model Message {
+  id             String      @id @default(uuid())
+  conversationId String
+  senderId       String
+  content        String?
+  type           MessageType @default(TEXT)
+  mediaUrl       String?
+  metadata       Json?
+  replyToId      String?
+  isDeleted      Boolean     @default(false)
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+
+  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  sender       User         @relation("SentMessages", fields: [senderId], references: [id])
+  replyTo      Message?     @relation("MessageReplies", fields: [replyToId], references: [id])
+  replies      Message[]    @relation("MessageReplies")
+
+  @@index([conversationId])
+  @@index([senderId])
+  @@map("messages")
+}
+
+model Group {
+  id          String   @id @default(uuid())
+  name        String
+  description String?
+  avatar      String?
+  creatorId   String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  creator      User          @relation("GroupCreator", fields: [creatorId], references: [id])
+  members      GroupMember[]
+  events       Event[]
+
+  @@map("groups")
+}
+
+model GroupMember {
+  id       String    @id @default(uuid())
+  groupId  String
+  userId   String
+  role     GroupRole @default(MEMBER)
+  joinedAt DateTime  @default(now())
+
+  group Group @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([groupId, userId])
+  @@map("group_members")
+}
+
+model Channel {
+  id          String   @id @default(uuid())
+  name        String
+  description String?
+  avatar      String?
+  isPublic    Boolean  @default(true)
+  creatorId   String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  creator    User            @relation("ChannelCreator", fields: [creatorId], references: [id])
+  members    ChannelMember[]
+  broadcasts Broadcast[]
+  events     Event[]
+
+  @@map("channels")
+}
+
+model ChannelMember {
+  id        String   @id @default(uuid())
+  channelId String
+  userId    String
+  isAdmin   Boolean  @default(false)
+  joinedAt  DateTime @default(now())
+
+  channel Channel @relation(fields: [channelId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([channelId, userId])
+  @@map("channel_members")
+}
+
+model Broadcast {
+  id        String      @id @default(uuid())
+  channelId String
+  senderId  String
+  content   String?
+  mediaUrl  String?
+  type      MessageType @default(TEXT)
+  metadata  Json?
+  createdAt DateTime    @default(now())
+
+  channel Channel @relation(fields: [channelId], references: [id], onDelete: Cascade)
+  sender  User    @relation("BroadcastSender", fields: [senderId], references: [id])
+
+  @@index([channelId])
+  @@map("broadcasts")
+}
+
+model Event {
+  id          String   @id @default(uuid())
+  title       String
+  description String?
+  startTime   DateTime
+  endTime     DateTime
+  location    String?
+  meetLink    String?
+  creatorId   String
+  groupId     String?
+  channelId   String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  creator   User            @relation("EventCreator", fields: [creatorId], references: [id])
+  group     Group?          @relation(fields: [groupId], references: [id])
+  channel   Channel?        @relation(fields: [channelId], references: [id])
+  attendees EventAttendee[]
+
+  @@map("events")
+}
+
+model EventAttendee {
+  id      String         @id @default(uuid())
+  eventId String
+  userId  String
+  status  AttendeeStatus @default(PENDING)
+
+  event Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([eventId, userId])
+  @@map("event_attendees")
+}
+
+model Call {
+  id          String     @id @default(uuid())
+  type        CallType   @default(VIDEO)
+  status      CallStatus @default(INITIATED)
+  startedAt   DateTime?
+  endedAt     DateTime?
+  createdAt   DateTime   @default(now())
+
+  participants CallParticipant[]
+
+  @@map("calls")
+}
+
+model CallParticipant {
+  id       String @id @default(uuid())
+  callId   String
+  userId   String
+  joinedAt DateTime?
+  leftAt   DateTime?
+
+  call Call @relation(fields: [callId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([callId, userId])
+  @@map("call_participants")
+}
+
+enum UserStatus {
+  ONLINE
+  OFFLINE
+  AWAY
+}
+
+enum ConvType {
+  DIRECT
+}
+
+enum MessageType {
+  TEXT
+  IMAGE
+  VIDEO
+  AUDIO
+  VOICE
+  FILE
+  EVENT_CARD
+  SYSTEM
+  AI_RESPONSE
+}
+
+enum GroupRole {
+  OWNER
+  ADMIN
+  MEMBER
+}
+
+enum AttendeeStatus {
+  PENDING
+  ACCEPTED
+  DECLINED
+}
+
+enum CallType {
+  VOICE
+  VIDEO
+}
+
+enum CallStatus {
+  INITIATED
+  RINGING
+  ACTIVE
+  ENDED
+  MISSED
+  REJECTED
+}
