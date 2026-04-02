@@ -27,7 +27,7 @@ RUN cd backend && ./node_modules/.bin/tsc
 # ─── Stage 2: Production ──────────────────────────────────────────────────────
 FROM node:20-alpine AS runner
 
-RUN apk add --no-cache dumb-init
+RUN apk add --no-cache dumb-init openssl
 
 WORKDIR /app/backend
 
@@ -59,4 +59,4 @@ RUN mkdir -p uploads/images \
 EXPOSE 3000
 
 ENTRYPOINT ["dumb-init", "--"]
-CMD ["sh", "-c", "npx prisma migrate deploy && node dist/index.js"]
+CMD ["sh", "-c", "if [ -z \"$DATABASE_URL\" ]; then echo 'ERROR: DATABASE_URL is not set. Add it in Railway > Variables.' && exit 1; fi && npx prisma migrate deploy && node dist/index.js"]
