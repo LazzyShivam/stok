@@ -99,6 +99,10 @@ class _ChatListScreenState extends State<ChatListScreen> {
     final other = conv.getOtherUser(myId);
     if (other == null) return const SizedBox.shrink();
 
+    // Use actual user data, fallback gracefully
+    final displayName = other.name.isNotEmpty
+        ? other.name
+        : (other.phone.isNotEmpty ? other.phone : 'Unknown');
     final lastMsg = conv.lastMessage;
     final presence = context.read<PresenceProvider>();
 
@@ -107,7 +111,7 @@ class _ChatListScreenState extends State<ChatListScreen> {
       leading: UserAvatar(
         userId: other.id,
         avatarUrl: other.avatar,
-        name: other.name,
+        name: displayName,
         size: 52,
         showStatus: true,
         status: presence.statusOf(other.id),
@@ -117,7 +121,7 @@ class _ChatListScreenState extends State<ChatListScreen> {
         children: [
           Expanded(
             child: Text(
-              other.name.isEmpty ? other.phone : other.name,
+              displayName,
               style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
             ),
           ),
@@ -138,7 +142,7 @@ class _ChatListScreenState extends State<ChatListScreen> {
             ),
       onTap: () => Navigator.pushNamed(context, '/chat', arguments: {
         'conversationId': conv.id,
-        'title': other.name.isEmpty ? other.phone : other.name,
+        'title': displayName,
         'avatarUrl': other.avatar,
         'userId': other.id,
       }),

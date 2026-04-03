@@ -57,11 +57,20 @@ class ConversationModel {
   }
 
   UserModel? getOtherUser(String myUserId) {
-    final member = members.firstWhere(
-      (m) => m.userId != myUserId,
-      orElse: () => members.first,
-    );
-    return member.user;
+    try {
+      final others = members.where((m) => m.userId != myUserId).toList();
+      if (others.isEmpty && members.isNotEmpty) return members.first.user;
+      if (others.isEmpty) return null;
+      // Return user if populated, else create a minimal one from member data
+      return others.first.user ?? UserModel(
+        id: others.first.userId,
+        phone: '',
+        name: 'User',
+        isAgent: false,
+      );
+    } catch (_) {
+      return null;
+    }
   }
 
   MessageModel? get lastMessage => messages.isNotEmpty ? messages.last : null;

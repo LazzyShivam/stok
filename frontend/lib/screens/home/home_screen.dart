@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/call_provider.dart';
@@ -32,36 +33,60 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Stack(
-      children: [
-        Scaffold(
-          body: IndexedStack(index: _currentIndex, children: _tabs),
-          bottomNavigationBar: Container(
-            decoration: const BoxDecoration(
-              border: Border(top: BorderSide(color: AppTheme.divider, width: 0.5)),
-            ),
-            child: BottomNavigationBar(
-              currentIndex: _currentIndex,
-              onTap: (i) => setState(() => _currentIndex = i),
-              items: const [
-                BottomNavigationBarItem(icon: Icon(Icons.chat_bubble_outline), activeIcon: Icon(Icons.chat_bubble_rounded), label: 'Chats'),
-                BottomNavigationBarItem(icon: Icon(Icons.contacts_outlined), activeIcon: Icon(Icons.contacts_rounded), label: 'Contacts'),
-                BottomNavigationBarItem(icon: Icon(Icons.group_outlined), activeIcon: Icon(Icons.group_rounded), label: 'Groups'),
-                BottomNavigationBarItem(icon: Icon(Icons.campaign_outlined), activeIcon: Icon(Icons.campaign_rounded), label: 'Channels'),
-                BottomNavigationBarItem(icon: Icon(Icons.event_outlined), activeIcon: Icon(Icons.event_rounded), label: 'Events'),
-                BottomNavigationBarItem(icon: Icon(Icons.settings_outlined), activeIcon: Icon(Icons.settings_rounded), label: 'Settings'),
-              ],
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) async {
+        if (didPop) return;
+        if (_currentIndex != 0) {
+          setState(() => _currentIndex = 0);
+          return;
+        }
+        final shouldExit = await showDialog<bool>(
+          context: context,
+          builder: (_) => AlertDialog(
+            title: const Text('Exit Stok?'),
+            content: const Text('Do you want to exit the app?'),
+            actions: [
+              TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
+              TextButton(onPressed: () => Navigator.pop(context, true), child: const Text('Exit', style: TextStyle(color: Colors.red))),
+            ],
+          ),
+        );
+        if (shouldExit == true && context.mounted) {
+          SystemNavigator.pop();
+        }
+      },
+      child: Stack(
+        children: [
+          Scaffold(
+            body: IndexedStack(index: _currentIndex, children: _tabs),
+            bottomNavigationBar: Container(
+              decoration: const BoxDecoration(
+                border: Border(top: BorderSide(color: AppTheme.divider, width: 0.5)),
+              ),
+              child: BottomNavigationBar(
+                currentIndex: _currentIndex,
+                onTap: (i) => setState(() => _currentIndex = i),
+                items: const [
+                  BottomNavigationBarItem(icon: Icon(Icons.chat_bubble_outline), activeIcon: Icon(Icons.chat_bubble_rounded), label: 'Chats'),
+                  BottomNavigationBarItem(icon: Icon(Icons.contacts_outlined), activeIcon: Icon(Icons.contacts_rounded), label: 'Contacts'),
+                  BottomNavigationBarItem(icon: Icon(Icons.group_outlined), activeIcon: Icon(Icons.group_rounded), label: 'Groups'),
+                  BottomNavigationBarItem(icon: Icon(Icons.campaign_outlined), activeIcon: Icon(Icons.campaign_rounded), label: 'Channels'),
+                  BottomNavigationBarItem(icon: Icon(Icons.event_outlined), activeIcon: Icon(Icons.event_rounded), label: 'Events'),
+                  BottomNavigationBarItem(icon: Icon(Icons.settings_outlined), activeIcon: Icon(Icons.settings_rounded), label: 'Settings'),
+                ],
+              ),
             ),
           ),
-        ),
-        // Incoming call overlay
-        Consumer<CallProvider>(
-          builder: (_, call, __) {
-            if (!call.hasIncomingCall) return const SizedBox.shrink();
-            return IncomingCallOverlay(callData: call.incomingCall!);
-          },
-        ),
-      ],
+          // Incoming call overlay
+          Consumer<CallProvider>(
+            builder: (_, call, __) {
+              if (!call.hasIncomingCall) return const SizedBox.shrink();
+              return IncomingCallOverlay(callData: call.incomingCall!);
+            },
+          ),
+        ],
+      ),
     );
   }
 }

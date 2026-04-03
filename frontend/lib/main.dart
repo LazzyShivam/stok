@@ -12,6 +12,7 @@ import 'providers/auth_provider.dart';
 import 'providers/chat_provider.dart';
 import 'providers/presence_provider.dart';
 import 'providers/call_provider.dart';
+import 'providers/theme_provider.dart';
 import 'screens/splash_screen.dart';
 import 'screens/auth/login_screen.dart';
 import 'screens/auth/otp_screen.dart';
@@ -52,6 +53,7 @@ void main() async {
         Provider<AuthService>.value(value: authService),
         Provider<SocketService>.value(value: socketService),
         Provider<WebRTCService>.value(value: webrtcService),
+        ChangeNotifierProvider(create: (_) => ThemeProvider()),
         ChangeNotifierProvider(create: (_) => AuthProvider(authService, apiService)),
         ChangeNotifierProvider(create: (_) => ChatProvider(apiService, socketService)),
         ChangeNotifierProvider(create: (_) => PresenceProvider(socketService)),
@@ -67,10 +69,13 @@ class StokApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
+    return Consumer<ThemeProvider>(
+      builder: (_, themeProvider, __) => MaterialApp(
       title: AppConfig.appName,
       debugShowCheckedModeBanner: false,
-      theme: AppTheme.darkTheme,
+      theme: AppTheme.lightTheme,
+      darkTheme: AppTheme.darkTheme,
+      themeMode: themeProvider.themeMode,
       initialRoute: '/',
       routes: {
         '/': (_) => const SplashScreen(),
@@ -103,6 +108,7 @@ class StokApp extends StatelessWidget {
             return null;
         }
       },
+      ),
     );
   }
 }

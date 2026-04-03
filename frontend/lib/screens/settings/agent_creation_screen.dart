@@ -102,6 +102,7 @@ class _AgentCreationScreenState extends State<AgentCreationScreen> {
   Widget _buildAgentCard(UserModel agent) {
     final config = agent.agentConfig ?? {};
     final model = config['model'] as String? ?? 'claude-sonnet-4-6';
+    final provider = config['provider'] as String? ?? 'anthropic';
     final prompt = config['systemPrompt'] as String? ?? '';
 
     return Card(
@@ -149,13 +150,33 @@ class _AgentCreationScreenState extends State<AgentCreationScreen> {
               ],
             ),
             const SizedBox(height: 12),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-              decoration: BoxDecoration(
-                color: AppTheme.primary.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Text('Model: $model', style: const TextStyle(color: AppTheme.primary, fontSize: 12)),
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                  decoration: BoxDecoration(
+                    color: AppTheme.primary.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text('Model: $model', style: const TextStyle(color: AppTheme.primary, fontSize: 12)),
+                ),
+                const SizedBox(width: 8),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                  decoration: BoxDecoration(
+                    color: (provider == 'openai' ? Colors.green : AppTheme.secondary).withOpacity(0.12),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(
+                    provider == 'openai' ? 'OpenAI' : 'Claude',
+                    style: TextStyle(
+                      color: provider == 'openai' ? Colors.green : AppTheme.secondary,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ],
             ),
             if (prompt.isNotEmpty) ...[
               const SizedBox(height: 8),
@@ -228,6 +249,7 @@ class _AgentFormSheetState extends State<_AgentFormSheet> {
   late final TextEditingController _bioCtrl;
   late final TextEditingController _promptCtrl;
   late String _model;
+  late String _provider;
   bool _loading = false;
 
   @override
@@ -239,13 +261,21 @@ class _AgentFormSheetState extends State<_AgentFormSheet> {
       text: widget.agent?.agentConfig?['systemPrompt'] as String? ??
           'You are a helpful assistant. Be concise, friendly, and informative.',
     );
+    _provider = (widget.agent?.agentConfig?['provider'] as String?) ?? 'anthropic';
     _model = (widget.agent?.agentConfig?['model'] as String?) ?? 'claude-sonnet-4-6';
   }
 
-  final _models = [
+  final _claudeModels = const [
     ('claude-sonnet-4-6', 'Claude Sonnet 4.6', 'Best balance of speed and intelligence'),
     ('claude-opus-4-6', 'Claude Opus 4.6', 'Most capable, complex reasoning'),
     ('claude-haiku-4-5-20251001', 'Claude Haiku 4.5', 'Fastest responses'),
+  ];
+
+  final _openaiModels = const [
+    ('gpt-4o', 'GPT-4o', 'Most capable OpenAI model'),
+    ('gpt-4o-mini', 'GPT-4o Mini', 'Fast and cost-efficient'),
+    ('gpt-4-turbo', 'GPT-4 Turbo', 'High intelligence, large context'),
+    ('o3-mini', 'o3-mini', 'Advanced reasoning model'),
   ];
 
   Future<void> _save() async {
@@ -262,6 +292,7 @@ class _AgentFormSheetState extends State<_AgentFormSheet> {
         'bio': _bioCtrl.text.trim(),
         'systemPrompt': prompt,
         'model': _model,
+        'provider': _provider,
       });
     } else {
       await api.patch('/agents/${widget.agent!.id}', data: {
@@ -269,6 +300,7 @@ class _AgentFormSheetState extends State<_AgentFormSheet> {
         'bio': _bioCtrl.text.trim(),
         'systemPrompt': prompt,
         'model': _model,
+        'provider': _provider,
       });
     }
 
@@ -280,6 +312,7 @@ class _AgentFormSheetState extends State<_AgentFormSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final models = _provider == 'anthropic' ? _claudeModels : _openaiModels;
     return Padding(
       padding: EdgeInsets.only(
         left: 24, right: 24, top: 24,
@@ -293,13 +326,36 @@ class _AgentFormSheetState extends State<_AgentFormSheet> {
             Text(widget.agent == null ? 'Create AI Agent' : 'Edit Agent',
                 style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
             const SizedBox(height: 20),
+            // Provider selection
+            Center(
+              child: SegmentedButton<String>(
+                segments: const [
+                  ButtonSegment(
+                    value: 'anthropic',
+                    label: Text('Claude'),
+                    icon: Icon(Icons.psychology_outlined),
+                  ),
+                  ButtonSegment(
+                    value: 'openai',
+                    label: Text('OpenAI'),
+                    icon: Icon(Icons.smart_toy_outlined),
+                  ),
+                ],
+                selected: {_provider},
+                onSelectionChanged: (v) => setState(() {
+                  _provider = v.first;
+                  _model = _provider == 'anthropic' ? 'claude-sonnet-4-6' : 'gpt-4o-mini';
+                }),
+              ),
+            ),
+            const SizedBox(height: 20),
             TextField(controller: _nameCtrl, decoration: const InputDecoration(labelText: 'Agent Name', prefixIcon: Icon(Icons.smart_toy_outlined)), autofocus: widget.agent == null),
             const SizedBox(height: 12),
             TextField(controller: _bioCtrl, decoration: const InputDecoration(labelText: 'Description / Role')),
             const SizedBox(height: 16),
             const Text('Model', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
             const SizedBox(height: 8),
-            ..._models.map((m) => RadioListTile<String>(
+            ...models.map((m) => RadioListTile<String>(
               value: m.$1,
               groupValue: _model,
               onChanged: (v) => setState(() => _model = v!),

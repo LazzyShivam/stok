@@ -98,11 +98,11 @@ class _OtpScreenState extends State<OtpScreen> {
         context.read<SocketService>().connect(token);
       }
       if (isNewUser) {
-        Navigator.pushReplacementNamed(context, '/profile-setup');
+        Navigator.pushNamedAndRemoveUntil(context, '/profile-setup', (route) => false);
       } else {
         await context.read<ChatProvider>().loadConversations();
         if (!mounted) return;
-        Navigator.pushReplacementNamed(context, '/home');
+        Navigator.pushNamedAndRemoveUntil(context, '/home', (route) => false);
       }
     } else {
       ScaffoldMessenger.of(context).showSnackBar(

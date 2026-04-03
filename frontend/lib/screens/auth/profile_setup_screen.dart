@@ -46,7 +46,7 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
     setState(() => _loading = false);
     if (!mounted) return;
     await context.read<ChatProvider>().loadConversations();
-    Navigator.pushReplacementNamed(context, '/home');
+    Navigator.pushNamedAndRemoveUntil(context, '/home', (route) => false);
   }
 
   @override

@@ -36,7 +36,7 @@ class _UserSearchScreenState extends State<UserSearchScreen> {
   Future<void> _openChat(UserModel user) async {
     final conv = await context.read<ChatProvider>().startConversation(user.id);
     if (!mounted) return;
-    Navigator.pushReplacementNamed(context, '/chat', arguments: {
+    Navigator.pushNamed(context, '/chat', arguments: {
       'conversationId': conv.id,
       'title': user.name.isEmpty ? user.phone : user.name,
       'avatarUrl': user.avatar,

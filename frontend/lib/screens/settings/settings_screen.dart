@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
+import '../../providers/theme_provider.dart';
 import '../../services/socket_service.dart';
 import '../../config/app_config.dart';
 import '../../theme/app_theme.dart';
@@ -80,12 +81,7 @@ class SettingsScreen extends StatelessWidget {
 
           // App section
           _sectionHeader('App'),
-          _settingsTile(
-            icon: Icons.palette_outlined,
-            title: 'Appearance',
-            subtitle: 'Dark theme',
-            onTap: () {},
-          ),
+          _buildThemeTile(context),
           _settingsTile(
             icon: Icons.storage_outlined,
             title: 'Storage & Data',
@@ -128,6 +124,35 @@ class SettingsScreen extends StatelessWidget {
           ),
           const SizedBox(height: 16),
         ],
+      ),
+    );
+  }
+
+  Widget _buildThemeTile(BuildContext context) {
+    final themeProvider = context.watch<ThemeProvider>();
+    return ListTile(
+      leading: Container(
+        width: 36,
+        height: 36,
+        decoration: BoxDecoration(
+          color: AppTheme.surfaceVariant,
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: Icon(
+          themeProvider.isDark ? Icons.dark_mode_outlined : Icons.light_mode_outlined,
+          size: 20,
+          color: AppTheme.onSurface,
+        ),
+      ),
+      title: const Text('Appearance', style: TextStyle(fontSize: 15)),
+      subtitle: Text(
+        themeProvider.isDark ? 'Dark theme' : 'Light theme',
+        style: const TextStyle(color: AppTheme.onSurfaceMuted, fontSize: 13),
+      ),
+      trailing: Switch(
+        value: themeProvider.isDark,
+        onChanged: (_) => themeProvider.toggleTheme(),
+        activeColor: AppTheme.primary,
       ),
     );
   }
