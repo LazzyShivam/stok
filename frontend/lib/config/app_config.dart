@@ -2,7 +2,7 @@ class AppConfig {
   static const String appName = 'Stok';
 
   // Change this to your backend URL
-  static const String baseUrl = 'http://192.168.1.4:4000';
+  static const String baseUrl = 'https://stok-production-f0d9.up.railway.app';
   static const String apiUrl = '$baseUrl/api';
   static const String socketUrl = baseUrl;
   static const String uploadUrl = baseUrl;

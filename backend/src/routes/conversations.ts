@@ -41,11 +41,14 @@ router.post('/', authenticate,
     const { userId } = req.body;
     if (userId === req.userId) return res.status(400).json({ error: 'Cannot chat with yourself' });
 
-    // Find existing conversation
+    // Find existing conversation between exactly these two users
     const existing = await prisma.conversation.findFirst({
       where: {
         type: 'DIRECT',
-        members: { every: { userId: { in: [req.userId!, userId] } } },
+        AND: [
+          { members: { some: { userId: req.userId! } } },
+          { members: { some: { userId } } },
+        ],
       },
       include: {
         members: { include: { user: { select: { id: true, name: true, avatar: true, status: true, phone: true } } } },

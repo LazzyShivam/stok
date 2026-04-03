@@ -34,14 +34,27 @@ class _UserSearchScreenState extends State<UserSearchScreen> {
   }
 
   Future<void> _openChat(UserModel user) async {
-    final conv = await context.read<ChatProvider>().startConversation(user.id);
-    if (!mounted) return;
-    Navigator.pushNamed(context, '/chat', arguments: {
-      'conversationId': conv.id,
-      'title': user.name.isEmpty ? user.phone : user.name,
-      'avatarUrl': user.avatar,
-      'userId': user.id,
-    });
+    setState(() => _loading = true);
+    try {
+      final conv = await context.read<ChatProvider>().startConversation(user.id);
+      if (!mounted) return;
+      Navigator.pushNamed(context, '/chat', arguments: {
+        'conversationId': conv.id,
+        'title': user.name.isEmpty ? user.phone : user.name,
+        'avatarUrl': user.avatar,
+        'userId': user.id,
+      });
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Could not start chat: ${e.toString().replaceFirst("Exception: ", "")}'),
+          backgroundColor: AppTheme.error,
+        ),
+      );
+    } finally {
+      if (mounted) setState(() => _loading = false);
+    }
   }
 
   @override

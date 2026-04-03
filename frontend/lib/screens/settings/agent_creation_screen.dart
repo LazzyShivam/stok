@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../services/api_service.dart';
+import '../../providers/chat_provider.dart';
 import '../../models/user_model.dart';
 import '../../theme/app_theme.dart';
 
@@ -28,6 +29,24 @@ class _AgentCreationScreenState extends State<AgentCreationScreen> {
       _agents = data.map((a) => UserModel.fromJson(a as Map<String, dynamic>)).toList();
       _loading = false;
     });
+  }
+
+  Future<void> _chatWithAgent(UserModel agent) async {
+    try {
+      final conv = await context.read<ChatProvider>().startConversation(agent.id);
+      if (!mounted) return;
+      Navigator.pushNamed(context, '/chat', arguments: {
+        'conversationId': conv.id,
+        'title': agent.name,
+        'avatarUrl': agent.avatar,
+        'userId': agent.id,
+      });
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Could not open chat: $e'), backgroundColor: AppTheme.error),
+      );
+    }
   }
 
   void _createAgent() {
@@ -191,9 +210,7 @@ class _AgentCreationScreenState extends State<AgentCreationScreen> {
             SizedBox(
               width: double.infinity,
               child: OutlinedButton.icon(
-                onPressed: () {
-                  // Start conversation with agent
-                },
+                onPressed: () => _chatWithAgent(agent),
                 icon: const Icon(Icons.chat_bubble_outline, size: 16),
                 label: const Text('Chat with Agent'),
               ),
