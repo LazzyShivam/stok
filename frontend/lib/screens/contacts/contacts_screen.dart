@@ -164,12 +164,13 @@ class _ContactsScreenState extends State<ContactsScreen> {
   Future<void> _startChat(UserModel user) async {
     try {
       final api = context.read<ApiService>();
-      final conv = await api.post('/conversations', data: {'participantId': user.id});
+      final conv = await api.post('/conversations', data: {'userId': user.id});
       if (!mounted) return;
       Navigator.pushNamed(context, '/chat', arguments: {
         'conversationId': (conv as Map<String, dynamic>)['id'],
-        'participantName': user.name.isNotEmpty ? user.name : user.phone,
-        'participantId': user.id,
+        'title': user.name.isNotEmpty ? user.name : user.phone,
+        'avatarUrl': user.avatar,
+        'userId': user.id,
       });
     } catch (_) {
       if (!mounted) return;
